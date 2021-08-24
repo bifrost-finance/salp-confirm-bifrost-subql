@@ -18,7 +18,7 @@ type StarterEntity @entity {
 
 type SalpInfo @entity {
   id: ID!
-  block_height: BigInt!
+  block_height: Int!
   block_timestamp: Date!
   method: String!
   data: String!
@@ -26,7 +26,9 @@ type SalpInfo @entity {
 
 type SalpContributing @entity {
   id: ID!
-  block_height: BigInt!
+  block_height: Int!
+  event_id: Int!
+  extrinsic_id: Int!
   block_timestamp: Date!
   account: String
   para_id: Int

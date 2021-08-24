@@ -5,7 +5,7 @@ import { SalpInfo } from "../types/models/SalpInfo";
 import { SalpContributing } from "../types/models/SalpContributing";
 
 export async function salp(block: SubstrateBlock): Promise<void> {
-  const blockNumber = (block.block.header.number as Compact<BlockNumber>).toBigInt();
+  const blockNumber = block.block.header.number.toNumber();
 
   const salpEvents = block.events.filter(e => e.event.section === 'salp') as SubstrateEvent[];
   // const salpEvents = block.events as SubstrateEvent[];
@@ -22,11 +22,13 @@ export async function salp(block: SubstrateBlock): Promise<void> {
 }
 
 export async function handleSalpContributing(event: SubstrateEvent): Promise<void> {
-  const blockNumber = (event.block.block.header.number as Compact<BlockNumber>).toBigInt();
+  const blockNumber = event.block.block.header.number.toNumber();
 
   const { event: { data: [account, para_id, balance] } } = event;
   const record = new SalpContributing(blockNumber.toString() + '-' + event.idx.toString());
   record.block_height = blockNumber;
+  record.event_id = event.idx;
+  record.extrinsic_id = event.extrinsic.idx;
   record.block_timestamp = event.block.timestamp;
   record.account = account.toString();
   record.para_id = (para_id as ParaId).toNumber();
