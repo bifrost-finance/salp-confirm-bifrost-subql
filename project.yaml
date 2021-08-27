@@ -14,6 +14,14 @@ network:
                 "After": "BlockNumber"
             }
         },
+        "ParachainTransactType": {
+            "_enum": {
+                "Xcm": 0,
+                "Proxy": 1
+            }
+        },
+        "Currency": "CurrencyIdOf",
+        "Amount": "AmountOf",
         "ScheduleTaskIndex": "u32",
         "DelayedOrigin": {
             "delay": "BlockNumber",
