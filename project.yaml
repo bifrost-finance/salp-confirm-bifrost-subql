@@ -3,8 +3,8 @@ description: ''
 repository: https://github.com/bifrost-finance/salp-confirm-bifrost-subql.git
 schema: ./schema.graphql
 network:
-  endpoint: wss://asgard-rpc.testnet.liebi.com/ws
-  # endpoint: wss://asgard-rpc.liebi.com/ws
+  # endpoint: wss://asgard-rpc.testnet.liebi.com/ws
+  endpoint: wss://asgard-rpc.liebi.com/ws
   # dictionary: https://api.subquery.network/sq/subquery/dictionary-polkadot
   types: {
         "CallOf": "Call",
@@ -452,3 +452,8 @@ dataSources:
           filter:
             module: salp
             method: Contributing
+        - handler: handleSalpContributed
+          kind: substrate/EventHandler
+          filter:
+            module: salp
+            method: Contributed
