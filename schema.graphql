@@ -45,5 +45,4 @@ type SalpContributed @entity {
   account: String
   para_id: Int
   balance: BigInt
-  message_id: String
 }
