@@ -4,6 +4,7 @@ import { Compact } from '@polkadot/types';
 import { SalpInfo } from "../types/models/SalpInfo";
 import { SalpContributing } from "../types/models/SalpContributing";
 import { SalpContributed } from "../types/models/SalpContributed";
+import { SalpContributeFailed } from "../types/models/SalpContributeFailed";
 
 export async function salp(block: SubstrateBlock): Promise<void> {
   const blockNumber = block.block.header.number.toNumber();
@@ -41,7 +42,7 @@ export async function handleSalpContributing(event: SubstrateEvent): Promise<voi
 export async function handleSalpContributed(event: SubstrateEvent): Promise<void> {
   const blockNumber = event.block.block.header.number.toNumber();
 
-  const { event: { data: [account, para_id, balance] } } = event;
+  const { event: { data: [account, para_id, balance, message_id] } } = event;
   const record = new SalpContributed(blockNumber.toString() + '-' + event.idx.toString());
   record.block_height = blockNumber;
   record.event_id = event.idx;
@@ -50,5 +51,22 @@ export async function handleSalpContributed(event: SubstrateEvent): Promise<void
   record.account = account.toString();
   record.para_id = (para_id as ParaId).toNumber();
   record.balance = (balance as Balance).toBigInt();
+  record.message_id = (message_id as MessageId).toString();
+  await record.save();
+}
+
+export async function handleSalpContributeFailed(event: SubstrateEvent): Promise<void> {
+  const blockNumber = event.block.block.header.number.toNumber();
+
+  const { event: { data: [account, para_id, balance, message_id] } } = event;
+  const record = new SalpContributeFailed(blockNumber.toString() + '-' + event.idx.toString());
+  record.block_height = blockNumber;
+  record.event_id = event.idx;
+  record.extrinsic_id = event.extrinsic.idx;
+  record.block_timestamp = event.block.timestamp;
+  record.account = account.toString();
+  record.para_id = (para_id as ParaId).toNumber();
+  record.balance = (balance as Balance).toBigInt();
+  record.message_id = (message_id as MessageId).toString();
   await record.save();
 }

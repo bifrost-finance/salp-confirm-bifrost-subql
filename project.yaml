@@ -465,3 +465,8 @@ dataSources:
           filter:
             module: salp
             method: Contributed
+        - handler: handleSalpContributeFailed
+          kind: substrate/EventHandler
+          filter:
+            module: salp
+            method: ContributeFailed
