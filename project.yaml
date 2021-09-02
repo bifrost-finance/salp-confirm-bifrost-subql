@@ -66,9 +66,18 @@ network:
     },
     "VestingScheduleOf": "OrmlVestingSchedule",
     "PoolInfo": {
-        "totalShares": "Compact<Share>",
-        "totalRewards": "Compact<Balance>",
-        "totalWithdrawnRewards": "Compact<Balance>"
+        "pool_id": "PoolId",
+        "creator": "AccountId",
+        "trading_pair": "(CurrencyId, CurrencyId)",
+        "min_deposit_to_start": "Balance",
+        "duration": "BlockNumber",
+        "after_block_to_start": "BlockNumber",
+        "update_b": "BlockNumber",
+        "deposit": "Balance",
+        "rewards": "(CurrencyId, RewardData)",
+        "state": "PoolState",
+        "type": "PoolType",
+        "block_startup": "BlockNumber"
     },
     "Share": "u128",
     "OracleValue": "Price",
@@ -262,6 +271,8 @@ network:
             "Fail": "Failed"
         }
     },
+    "Currency": "CurrencyIdOf",
+    "Amount": "AmountOf",
     "PalletBalanceOf": "Balance",
     "NumberOrHex": {
         "_enum": {
@@ -282,14 +293,14 @@ network:
         "trie_index": "TrieIndex",
         "status": "FundStatus"
     },
-    "RedeemStatus": "BalanceOf",
     "FundStatus": {
         "_enum": [
             "Ongoing",
             "Retired",
             "Success",
             "Failed",
-            "Withdrew",
+            "RefundWithdrew",
+            "RedeemWithdrew",
             "End"
         ]
     },
@@ -298,7 +309,14 @@ network:
             "Idle",
             "Refunded",
             "Unlocked",
-            "Refunding"
+            "Refunding",
+            "Contributing(BalanceOf)"
+        ]
+    },
+    "RedeemStatus": {
+        "_enum": [
+            "Idle",
+            "Redeeming(BalanceOf)"
         ]
     },
     "CrowdloanContributeCall": {
@@ -309,6 +327,24 @@ network:
     "ContributeCall": {
         "_enum": {
             "Contribute": "Contribution"
+        }
+    },
+    "ParachainTransactProxyType": {
+        "_enum": {
+            "Primary": 0,
+            "Derived": 1
+        }
+    },
+    "ParachainTransactType": {
+        "_enum": {
+            "Xcm": 0,
+            "Proxy": 1
+        }
+    },
+    "ParachainDerivedProxyAccountType": {
+        "_enum": {
+            "Salp": 0,
+            "Staking": 1
         }
     },
     "Contribution": {
@@ -329,7 +365,7 @@ network:
         "account_id": "AccountId",
         "record_amount": "Balance"
     },
-    "PoolId": "u32",
+    "PoolId": "u128",
     "SwapFee": "u128",
     "PoolDetails": {
         "owner": "AccountId",
@@ -369,26 +405,27 @@ network:
         ]
     },
     "U64F64": "u128",
-    "AssetId": {
+    "ZenlinkAssetId": {
         "chain_id": "u32",
         "asset_type": "u8",
         "asset_index": "u32"
     },
-    "AssetBalance": "u128",
+    "ZenlinkAssetBalance": "u128",
     "PairInfo": {
-        "asset0": "AssetId",
-        "asset1": "AssetId",
+        "asset0": "ZenlinkAssetId",
+        "asset1": "ZenlinkAssetId",
         "account": "AccountId",
-        "totalLiquidity": "AssetBalance",
-        "holdingLiquidity": "AssetBalance",
-        "reserve0": "AssetBalance",
-        "reserve1": "AssetBalance",
-        "lpAssetId": "AssetId"
+        "totalLiquidity": "ZenlinkAssetBalance",
+        "holdingLiquidity": "ZenlinkAssetBalance",
+        "reserve0": "ZenlinkAssetBalance",
+        "reserve1": "ZenlinkAssetBalance",
+        "lpAssetId": "ZenlinkAssetId"
     },
     "TokenSymbol": {
         "_enum": {
-            "BNC": 0,
-            "AUSD": 2,
+            "ASG": 0,
+            "BNC": 1,
+            "KUSD": 2,
             "DOT": 3,
             "KSM": 4,
             "ETH": 5
@@ -396,9 +433,9 @@ network:
     },
     "CurrencyId": {
         "_enum": {
-            "Token": "TokenSymbol",
-            "VToken": "TokenSymbol",
             "Native": "TokenSymbol",
+            "VToken": "TokenSymbol",
+            "Token": "TokenSymbol",
             "Stable": "TokenSymbol",
             "VSToken": "TokenSymbol",
             "VSBond": "(TokenSymbol, ParaId, LeasePeriod, LeasePeriod)"
@@ -416,27 +453,33 @@ network:
             "FromSiblingParaChain": 2
         }
     },
-    "ParachainTransactProxyType": {
-        "_enum": {
-            "Primary": 0,
-            "Derived": 1
-        }
+    "PoolType": {
+        "_enum": [
+            "Mining",
+            "Farming"
+        ]
     },
-    "ParachainDerivedProxyAccountType": {
-        "_enum": {
-            "Salp": 0,
-            "Staking": 1
-        }
+    "PoolState": {
+        "_enum": [
+            "UnderAudit",
+            "Approved",
+            "Ongoing",
+            "Retired",
+            "Dead"
+        ]
     },
-    "Keys": "SessionKeys1",
-    "ParachainTransactType": {
-        "_enum": {
-            "Xcm": 0,
-            "Proxy": 1
-        }
+    "DepositData": {
+        "deposit": "Balance",
+        "gain_avgs": "(CurrencyId, FixedU128)",
+        "update_b": "BlockNumber"
     },
-    "Currency": "CurrencyIdOf",
-    "Amount": "AmountOf"
+    "RewardData": {
+        "total": "BalanceOf",
+        "per_block": "BalanceOf",
+        "claimed": "BalanceOf",
+        "gain_avg": "FixedU128"
+    },
+    "Keys": "SessionKeys1"
 }
 dataSources:
   - name: main
@@ -444,15 +487,15 @@ dataSources:
     startBlock: 1
     mapping:
       handlers:
-        - handler: handleBlock
-          kind: substrate/BlockHandler
-        - handler: handleEvent
-          kind: substrate/EventHandler
-          filter:
-            module: balances
-            method: Deposit
-        - handler: handleCall
-          kind: substrate/CallHandler
+        # - handler: handleBlock
+        #   kind: substrate/BlockHandler
+        # - handler: handleEvent
+        #   kind: substrate/EventHandler
+        #   filter:
+        #     module: balances
+        #     method: Deposit
+        # - handler: handleCall
+        #   kind: substrate/CallHandler
         - handler: salp
           kind: substrate/BlockHandler
         - handler: handleSalpContributing
