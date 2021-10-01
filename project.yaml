@@ -419,7 +419,7 @@ network:
     "ZenlinkAssetId": {
         "chain_id": "u32",
         "asset_type": "u8",
-        "asset_index": "u32"
+        "asset_index": "u64"
     },
     "ZenlinkAssetBalance": "u128",
     "PairInfo": {
@@ -431,6 +431,24 @@ network:
         "reserve0": "ZenlinkAssetBalance",
         "reserve1": "ZenlinkAssetBalance",
         "lpAssetId": "ZenlinkAssetId"
+    },
+    "PairMetadata": {
+        "pair_account": "AccountId",
+        "target_supply": "ZenlinkAssetBalance"
+    },
+    "BootstrapParamter": {
+        "min_contribution": "(ZenlinkAssetBalance, ZenlinkAssetBalance)",
+        "target_supply": "(ZenlinkAssetBalance, ZenlinkAssetBalance)",
+        "accumulated_supply": "(ZenlinkAssetBalance, ZenlinkAssetBalance)",
+        "end_block_number": "BlockNumber",
+        "pair_account": "AccountId"
+    },
+    "PairStatus": {
+        "_enum": {
+            "Trading": "PairMetadata",
+            "Bootstrap": "BootstrapParamter",
+            "Disable": null
+        }
     },
     "TokenSymbol": {
         "_enum": {
@@ -449,7 +467,8 @@ network:
             "Token": "TokenSymbol",
             "Stable": "TokenSymbol",
             "VSToken": "TokenSymbol",
-            "VSBond": "(TokenSymbol, ParaId, LeasePeriod, LeasePeriod)"
+            "VSBond": "(TokenSymbol, ParaId, LeasePeriod, LeasePeriod)",
+            "LPToken": "(TokenSymbol, u8, TokenSymbol, u8)"
         }
     },
     "CurrencyIdOf": "CurrencyId",
@@ -491,7 +510,9 @@ network:
         "claimed": "Balance",
         "gain_avg": "FixedU128"
     },
-    "MultiLocation": "MultiLocationV0"
+    "MultiLocation": "MultiLocationV0",
+    "MultiAsset": "MultiAssetV0",
+    "Xcm": "XcmV0"
 }
 dataSources:
   - name: main
