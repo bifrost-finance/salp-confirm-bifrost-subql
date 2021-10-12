@@ -1,4 +1,4 @@
-specVersion: 0.0.1
+specVersion: 0.9.2
 description: ''
 repository: https://github.com/bifrost-finance/salp-confirm-bifrost-subql.git
 schema: ./schema.graphql
@@ -457,7 +457,9 @@ network:
             "KUSD": 2,
             "DOT": 3,
             "KSM": 4,
-            "ETH": 5
+            "ETH": 5,
+            "KAR": 6,
+            "ZLK": 7
         }
     },
     "CurrencyId": {
@@ -510,9 +512,11 @@ network:
         "claimed": "Balance",
         "gain_avg": "FixedU128"
     },
-    "MultiLocation": "MultiLocationV0",
-    "MultiAsset": "MultiAssetV0",
-    "Xcm": "XcmV0"
+    "AssetInstance": "AssetInstanceV1",
+    "MultiLocation": "MultiLocationV1",
+    "MultiAsset": "MultiAssetV1",
+    "Xcm": "XcmV1",
+    "XcmOrder": "XcmOrderV1"
 }
 dataSources:
   - name: main
