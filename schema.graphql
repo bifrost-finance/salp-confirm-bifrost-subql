@@ -16,15 +16,7 @@ type StarterEntity @entity {
 
 }
 
-type SalpInfo @entity {
-  id: ID!
-  block_height: Int!
-  block_timestamp: Date!
-  method: String!
-  data: String!
-}
-
-type SalpContributing @entity {
+type SalpLiteIssued @entity {
   id: ID!
   block_height: Int!
   event_id: Int!
@@ -34,17 +26,4 @@ type SalpContributing @entity {
   para_id: Int
   balance: BigInt
   message_id: String
-}
-
-type SalpContributed @entity {
-  id: ID!
-  block_height: Int!
-  event_id: Int!
-  extrinsic_id: Int!
-  block_timestamp: Date!
-  account: String
-  para_id: Int
-  balance: BigInt
-  message_id: String
-  is_success: Boolean
 }
