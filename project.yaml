@@ -476,9 +476,8 @@ network:
     "AmountOf": "Balance",
     "StorageVersion": "Releases",
     "ShareWeight": "Balance",
-    "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
-    "OrmlTokensBalanceLock": "BalanceLock",
-    "OrmlTokensAccountData": "OrmlAccountData",
+    "Currency": "CurrencyIdOf",
+    "Amount": "AmountOf",
     "TransferOriginType": {
         "_enum": {
             "FromSelf": 0,
@@ -514,7 +513,7 @@ network:
         "gain_avg": "FixedU128"
     },
     "AssetInstance": "AssetInstanceV1"
-     }
+  }
   typesBundle: {
     "spec": {
         "bifrost": {
@@ -1304,9 +1303,8 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
-                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
-                        "OrmlTokensBalanceLock": "BalanceLock",
-                        "OrmlTokensAccountData": "OrmlAccountData",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -1822,9 +1820,8 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
-                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
-                        "OrmlTokensBalanceLock": "BalanceLock",
-                        "OrmlTokensAccountData": "OrmlAccountData",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -2666,9 +2663,8 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
-                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
-                        "OrmlTokensBalanceLock": "BalanceLock",
-                        "OrmlTokensAccountData": "OrmlAccountData",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -3187,9 +3183,8 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
-                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
-                        "OrmlTokensBalanceLock": "BalanceLock",
-                        "OrmlTokensAccountData": "OrmlAccountData",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -3242,7 +3237,7 @@ network:
             }
         }
     }
-   }
+  }
 dataSources:
   - name: main
     kind: substrate/Runtime
