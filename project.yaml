@@ -3241,7 +3241,7 @@ network:
 dataSources:
   - name: main
     kind: substrate/Runtime
-    startBlock: 612437
+    startBlock: 730550
     mapping:
       handlers:
         # - handler: salp
