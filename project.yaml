@@ -79,7 +79,9 @@ network:
         "update_b": "BlockNumber",
         "state": "PoolState",
         "block_startup": "Option<BlockNumber>",
-        "block_retired": "Option<BlockNumber>"
+        "redeem_limit_time": "BlockNumber",
+        "unlock_limit_nums": "u32",
+        "pending_unlock_nums": "u32"
     },
     "Share": "u128",
     "OracleValue": "Price",
@@ -273,15 +275,7 @@ network:
             "Fail": "Failed"
         }
     },
-    "Currency": "CurrencyIdOf",
-    "Amount": "AmountOf",
     "PalletBalanceOf": "Balance",
-    "NumberOrHex": {
-        "_enum": {
-            "Number": "u64",
-            "Hex": "U256"
-        }
-    },
     "ExtraFeeName": {
         "_enum": [
             "SalpContribute",
@@ -315,8 +309,9 @@ network:
         "_enum": [
             "Idle",
             "Refunded",
+            "Redeemed",
             "Unlocked",
-            "Refunding",
+            "MigratedIdle",
             "Contributing"
         ]
     },
@@ -398,24 +393,23 @@ network:
     },
     "OracleKey": "CurrencyId",
     "BlockNumberFor": "BlockNumber",
-    "OrderId": "u64",
     "OrderInfo": {
         "owner": "AccountIdOf",
         "vsbond": "CurrencyId",
-        "supply": "u128",
-        "remain": "u128",
-        "unit_price": "U64F64",
+        "amount": "BalanceOf",
+        "remain": "BalanceOf",
+        "total_price": "BalanceOf",
         "order_id": "OrderId",
-        "order_state": "OrderState"
+        "order_type": "OrderType",
+        "remain_price": "BalanceOf"
     },
-    "OrderState": {
-        "_enum": [
-            "InTrade",
-            "Revoked",
-            "Clinchd"
-        ]
+    "OrderId": "u64",
+    "OrderType": {
+        "_enum": {
+            "Sell": 0,
+            "Buy": 1
+        }
     },
-    "U64F64": "u128",
     "ZenlinkAssetId": {
         "chain_id": "u32",
         "asset_type": "u8",
@@ -459,7 +453,9 @@ network:
             "KSM": 4,
             "ETH": 5,
             "KAR": 6,
-            "ZLK": 7
+            "ZLK": 7,
+            "PHA": 8,
+            "RMRK": 9
         }
     },
     "CurrencyId": {
@@ -478,6 +474,11 @@ network:
     "AmountOf": "Balance",
     "StorageVersion": "Releases",
     "ShareWeight": "Balance",
+    "Currency": "CurrencyIdOf",
+    "Amount": "AmountOf",
+    "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
+    "OrmlTokensBalanceLock": "BalanceLock",
+    "OrmlTokensAccountData": "OrmlAccountData",
     "TransferOriginType": {
         "_enum": {
             "FromSelf": 0,
@@ -504,15 +505,15 @@ network:
     "DepositData": {
         "deposit": "Balance",
         "gain_avgs": "BTreeMap<CurrencyId, FixedU128>",
-        "update_b": "BlockNumber"
+        "update_b": "BlockNumber",
+        "pending_unlocks": "Vec<(BlockNumber, Balance)>"
     },
     "RewardData": {
         "total": "Balance",
         "per_block": "Balance",
         "claimed": "Balance",
         "gain_avg": "FixedU128"
-    },
-    "AssetInstance": "AssetInstanceV1"
+    }
 }
   typesBundle: {
     "spec": {
@@ -583,7 +584,7 @@ network:
                                 "isOptional": true
                             }
                         ],
-                        "type": "(CurrencyId, NumberOrHex)",
+                        "type": "(CurrencyId, U256)",
                         "isSubscription": false,
                         "jsonrpc": "flexibleFee_getFeeTokenAndAmount",
                         "method": "getFeeTokenAndAmount",
@@ -607,6 +608,24 @@ network:
                         "isSubscription": false,
                         "jsonrpc": "salp_getContribution",
                         "method": "getContribution",
+                        "section": "salp"
+                    },
+                    "getLiteContribution": {
+                        "description": "salp getLiteContribution",
+                        "params": [
+                            {
+                                "name": "index",
+                                "type": "ParaId"
+                            },
+                            {
+                                "name": "who",
+                                "type": "AccountIdOf"
+                            }
+                        ],
+                        "type": "(Balance, ContributionStatus)",
+                        "isSubscription": false,
+                        "jsonrpc": "salp_getLiteContribution",
+                        "method": "getLiteContribution",
                         "section": "salp"
                     }
                 },
@@ -689,42 +708,6 @@ network:
                         "isSubscription": false,
                         "jsonrpc": "zenlinkProtocol_getSovereignsInfo",
                         "method": "getSovereignsInfo",
-                        "section": "zenlinkProtocol"
-                    },
-                    "getAllPairs": {
-                        "description": "Get the information of all the exchange pairs.",
-                        "params": [
-                            {
-                                "name": "at",
-                                "type": "BlockHash",
-                                "isHistoric": true,
-                                "isOptional": true
-                            }
-                        ],
-                        "type": "Vec<PairInfo>",
-                        "isSubscription": false,
-                        "jsonrpc": "zenlinkProtocol_getAllPairs",
-                        "method": "getAllPairs",
-                        "section": "zenlinkProtocol"
-                    },
-                    "getOwnerPairs": {
-                        "description": "Get ownership of all exchange pairs for a particular account.",
-                        "params": [
-                            {
-                                "name": "owner",
-                                "type": "AccountId"
-                            },
-                            {
-                                "name": "at",
-                                "type": "BlockHash",
-                                "isHistoric": true,
-                                "isOptional": true
-                            }
-                        ],
-                        "type": "Vec<PairInfo>",
-                        "isSubscription": false,
-                        "jsonrpc": "zenlinkProtocol_getOwnerPairs",
-                        "method": "getOwnerPairs",
                         "section": "zenlinkProtocol"
                     },
                     "getPairByAssetId": {
@@ -853,6 +836,10 @@ network:
                                 "type": "PoolId"
                             },
                             {
+                                "name": "pallet_instance",
+                                "type": "U32"
+                            },
+                            {
                                 "name": "at",
                                 "type": "Hash",
                                 "isOptional": true
@@ -945,7 +932,9 @@ network:
                             "update_b": "BlockNumber",
                             "state": "PoolState",
                             "block_startup": "Option<BlockNumber>",
-                            "block_retired": "Option<BlockNumber>"
+                            "redeem_limit_time": "BlockNumber",
+                            "unlock_limit_nums": "u32",
+                            "pending_unlock_nums": "u32"
                         },
                         "Share": "u128",
                         "OracleValue": "Price",
@@ -1139,15 +1128,7 @@ network:
                                 "Fail": "Failed"
                             }
                         },
-                        "Currency": "CurrencyIdOf",
-                        "Amount": "AmountOf",
                         "PalletBalanceOf": "Balance",
-                        "NumberOrHex": {
-                            "_enum": {
-                                "Number": "u64",
-                                "Hex": "U256"
-                            }
-                        },
                         "ExtraFeeName": {
                             "_enum": [
                                 "SalpContribute",
@@ -1181,8 +1162,9 @@ network:
                             "_enum": [
                                 "Idle",
                                 "Refunded",
+                                "Redeemed",
                                 "Unlocked",
-                                "Refunding",
+                                "MigratedIdle",
                                 "Contributing"
                             ]
                         },
@@ -1264,24 +1246,23 @@ network:
                         },
                         "OracleKey": "CurrencyId",
                         "BlockNumberFor": "BlockNumber",
-                        "OrderId": "u64",
                         "OrderInfo": {
                             "owner": "AccountIdOf",
                             "vsbond": "CurrencyId",
-                            "supply": "u128",
-                            "remain": "u128",
-                            "unit_price": "U64F64",
+                            "amount": "BalanceOf",
+                            "remain": "BalanceOf",
+                            "total_price": "BalanceOf",
                             "order_id": "OrderId",
-                            "order_state": "OrderState"
+                            "order_type": "OrderType",
+                            "remain_price": "BalanceOf"
                         },
-                        "OrderState": {
-                            "_enum": [
-                                "InTrade",
-                                "Revoked",
-                                "Clinchd"
-                            ]
+                        "OrderId": "u64",
+                        "OrderType": {
+                            "_enum": {
+                                "Sell": 0,
+                                "Buy": 1
+                            }
                         },
-                        "U64F64": "u128",
                         "ZenlinkAssetId": {
                             "chain_id": "u32",
                             "asset_type": "u8",
@@ -1318,10 +1299,15 @@ network:
                         },
                         "TokenSymbol": {
                             "_enum": {
+                                "ASG": 0,
                                 "BNC": 1,
                                 "KUSD": 2,
+                                "DOT": 3,
                                 "KSM": 4,
-                                "KAR": 6
+                                "KAR": 6,
+                                "ZLK": 7,
+                                "PHA": 8,
+                                "RMRK": 9
                             }
                         },
                         "CurrencyId": {
@@ -1340,6 +1326,11 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
+                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
+                        "OrmlTokensBalanceLock": "BalanceLock",
+                        "OrmlTokensAccountData": "OrmlAccountData",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -1366,7 +1357,8 @@ network:
                         "DepositData": {
                             "deposit": "Balance",
                             "gain_avgs": "BTreeMap<CurrencyId, FixedU128>",
-                            "update_b": "BlockNumber"
+                            "update_b": "BlockNumber",
+                            "pending_unlocks": "Vec<(BlockNumber, Balance)>"
                         },
                         "RewardData": {
                             "total": "Balance",
@@ -1374,11 +1366,12 @@ network:
                             "claimed": "Balance",
                             "gain_avg": "FixedU128"
                         },
-                        "AssetInstance": "AssetInstanceV1",
                         "MultiAsset": "MultiAssetV0",
                         "Xcm": "XcmV0",
                         "XcmOrder": "XcmOrderV0",
-                        "MultiLocation": "MultiLocationV0"
+                        "MultiLocation": "MultiLocationV0",
+                        "XcmError": "XcmErrorV0",
+                        "Response": "ResponseV0"
                     }
                 },
                 {
@@ -1459,7 +1452,9 @@ network:
                             "update_b": "BlockNumber",
                             "state": "PoolState",
                             "block_startup": "Option<BlockNumber>",
-                            "block_retired": "Option<BlockNumber>"
+                            "redeem_limit_time": "BlockNumber",
+                            "unlock_limit_nums": "u32",
+                            "pending_unlock_nums": "u32"
                         },
                         "Share": "u128",
                         "OracleValue": "Price",
@@ -1653,15 +1648,7 @@ network:
                                 "Fail": "Failed"
                             }
                         },
-                        "Currency": "CurrencyIdOf",
-                        "Amount": "AmountOf",
                         "PalletBalanceOf": "Balance",
-                        "NumberOrHex": {
-                            "_enum": {
-                                "Number": "u64",
-                                "Hex": "U256"
-                            }
-                        },
                         "ExtraFeeName": {
                             "_enum": [
                                 "SalpContribute",
@@ -1695,8 +1682,9 @@ network:
                             "_enum": [
                                 "Idle",
                                 "Refunded",
+                                "Redeemed",
                                 "Unlocked",
-                                "Refunding",
+                                "MigratedIdle",
                                 "Contributing"
                             ]
                         },
@@ -1778,24 +1766,23 @@ network:
                         },
                         "OracleKey": "CurrencyId",
                         "BlockNumberFor": "BlockNumber",
-                        "OrderId": "u64",
                         "OrderInfo": {
                             "owner": "AccountIdOf",
                             "vsbond": "CurrencyId",
-                            "supply": "u128",
-                            "remain": "u128",
-                            "unit_price": "U64F64",
+                            "amount": "BalanceOf",
+                            "remain": "BalanceOf",
+                            "total_price": "BalanceOf",
                             "order_id": "OrderId",
-                            "order_state": "OrderState"
+                            "order_type": "OrderType",
+                            "remain_price": "BalanceOf"
                         },
-                        "OrderState": {
-                            "_enum": [
-                                "InTrade",
-                                "Revoked",
-                                "Clinchd"
-                            ]
+                        "OrderId": "u64",
+                        "OrderType": {
+                            "_enum": {
+                                "Sell": 0,
+                                "Buy": 1
+                            }
                         },
-                        "U64F64": "u128",
                         "ZenlinkAssetId": {
                             "chain_id": "u32",
                             "asset_type": "u8",
@@ -1832,10 +1819,15 @@ network:
                         },
                         "TokenSymbol": {
                             "_enum": {
+                                "ASG": 0,
                                 "BNC": 1,
                                 "KUSD": 2,
+                                "DOT": 3,
                                 "KSM": 4,
-                                "KAR": 6
+                                "KAR": 6,
+                                "ZLK": 7,
+                                "PHA": 8,
+                                "RMRK": 9
                             }
                         },
                         "CurrencyId": {
@@ -1854,6 +1846,11 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
+                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
+                        "OrmlTokensBalanceLock": "BalanceLock",
+                        "OrmlTokensAccountData": "OrmlAccountData",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -1880,7 +1877,8 @@ network:
                         "DepositData": {
                             "deposit": "Balance",
                             "gain_avgs": "BTreeMap<CurrencyId, FixedU128>",
-                            "update_b": "BlockNumber"
+                            "update_b": "BlockNumber",
+                            "pending_unlocks": "Vec<(BlockNumber, Balance)>"
                         },
                         "RewardData": {
                             "total": "Balance",
@@ -1888,11 +1886,12 @@ network:
                             "claimed": "Balance",
                             "gain_avg": "FixedU128"
                         },
-                        "AssetInstance": "AssetInstanceV1",
                         "MultiAsset": "MultiAssetV1",
                         "Xcm": "XcmV1",
                         "XcmOrder": "XcmOrderV1",
-                        "MultiLocation": "MultiLocationV1"
+                        "MultiLocation": "MultiLocationV1",
+                        "XcmError": "XcmErrorV1",
+                        "Response": "ResponseV1"
                     }
                 }
             ],
@@ -1970,7 +1969,7 @@ network:
                                 "isOptional": true
                             }
                         ],
-                        "type": "(CurrencyId, NumberOrHex)",
+                        "type": "(CurrencyId, U256)",
                         "isSubscription": false,
                         "jsonrpc": "flexibleFee_getFeeTokenAndAmount",
                         "method": "getFeeTokenAndAmount",
@@ -1994,6 +1993,24 @@ network:
                         "isSubscription": false,
                         "jsonrpc": "salp_getContribution",
                         "method": "getContribution",
+                        "section": "salp"
+                    },
+                    "getLiteContribution": {
+                        "description": "salp getLiteContribution",
+                        "params": [
+                            {
+                                "name": "index",
+                                "type": "ParaId"
+                            },
+                            {
+                                "name": "who",
+                                "type": "AccountIdOf"
+                            }
+                        ],
+                        "type": "(Balance, ContributionStatus)",
+                        "isSubscription": false,
+                        "jsonrpc": "salp_getLiteContribution",
+                        "method": "getLiteContribution",
                         "section": "salp"
                     }
                 },
@@ -2076,42 +2093,6 @@ network:
                         "isSubscription": false,
                         "jsonrpc": "zenlinkProtocol_getSovereignsInfo",
                         "method": "getSovereignsInfo",
-                        "section": "zenlinkProtocol"
-                    },
-                    "getAllPairs": {
-                        "description": "Get the information of all the exchange pairs.",
-                        "params": [
-                            {
-                                "name": "at",
-                                "type": "BlockHash",
-                                "isHistoric": true,
-                                "isOptional": true
-                            }
-                        ],
-                        "type": "Vec<PairInfo>",
-                        "isSubscription": false,
-                        "jsonrpc": "zenlinkProtocol_getAllPairs",
-                        "method": "getAllPairs",
-                        "section": "zenlinkProtocol"
-                    },
-                    "getOwnerPairs": {
-                        "description": "Get ownership of all exchange pairs for a particular account.",
-                        "params": [
-                            {
-                                "name": "owner",
-                                "type": "AccountId"
-                            },
-                            {
-                                "name": "at",
-                                "type": "BlockHash",
-                                "isHistoric": true,
-                                "isOptional": true
-                            }
-                        ],
-                        "type": "Vec<PairInfo>",
-                        "isSubscription": false,
-                        "jsonrpc": "zenlinkProtocol_getOwnerPairs",
-                        "method": "getOwnerPairs",
                         "section": "zenlinkProtocol"
                     },
                     "getPairByAssetId": {
@@ -2240,6 +2221,10 @@ network:
                                 "type": "PoolId"
                             },
                             {
+                                "name": "pallet_instance",
+                                "type": "U32"
+                            },
+                            {
                                 "name": "at",
                                 "type": "Hash",
                                 "isOptional": true
@@ -2332,7 +2317,9 @@ network:
                             "update_b": "BlockNumber",
                             "state": "PoolState",
                             "block_startup": "Option<BlockNumber>",
-                            "block_retired": "Option<BlockNumber>"
+                            "redeem_limit_time": "BlockNumber",
+                            "unlock_limit_nums": "u32",
+                            "pending_unlock_nums": "u32"
                         },
                         "Share": "u128",
                         "OracleValue": "Price",
@@ -2526,15 +2513,7 @@ network:
                                 "Fail": "Failed"
                             }
                         },
-                        "Currency": "CurrencyIdOf",
-                        "Amount": "AmountOf",
                         "PalletBalanceOf": "Balance",
-                        "NumberOrHex": {
-                            "_enum": {
-                                "Number": "u64",
-                                "Hex": "U256"
-                            }
-                        },
                         "ExtraFeeName": {
                             "_enum": [
                                 "SalpContribute",
@@ -2568,8 +2547,9 @@ network:
                             "_enum": [
                                 "Idle",
                                 "Refunded",
+                                "Redeemed",
                                 "Unlocked",
-                                "Refunding",
+                                "MigratedIdle",
                                 "Contributing"
                             ]
                         },
@@ -2651,24 +2631,23 @@ network:
                         },
                         "OracleKey": "CurrencyId",
                         "BlockNumberFor": "BlockNumber",
-                        "OrderId": "u64",
                         "OrderInfo": {
                             "owner": "AccountIdOf",
                             "vsbond": "CurrencyId",
-                            "supply": "u128",
-                            "remain": "u128",
-                            "unit_price": "U64F64",
+                            "amount": "BalanceOf",
+                            "remain": "BalanceOf",
+                            "total_price": "BalanceOf",
                             "order_id": "OrderId",
-                            "order_state": "OrderState"
+                            "order_type": "OrderType",
+                            "remain_price": "BalanceOf"
                         },
-                        "OrderState": {
-                            "_enum": [
-                                "InTrade",
-                                "Revoked",
-                                "Clinchd"
-                            ]
+                        "OrderId": "u64",
+                        "OrderType": {
+                            "_enum": {
+                                "Sell": 0,
+                                "Buy": 1
+                            }
                         },
-                        "U64F64": "u128",
                         "ZenlinkAssetId": {
                             "chain_id": "u32",
                             "asset_type": "u8",
@@ -2712,7 +2691,9 @@ network:
                                 "KSM": 4,
                                 "ETH": 5,
                                 "KAR": 6,
-                                "ZLK": 7
+                                "ZLK": 7,
+                                "PHA": 8,
+                                "RMRK": 9
                             }
                         },
                         "CurrencyId": {
@@ -2731,6 +2712,11 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
+                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
+                        "OrmlTokensBalanceLock": "BalanceLock",
+                        "OrmlTokensAccountData": "OrmlAccountData",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -2757,7 +2743,8 @@ network:
                         "DepositData": {
                             "deposit": "Balance",
                             "gain_avgs": "BTreeMap<CurrencyId, FixedU128>",
-                            "update_b": "BlockNumber"
+                            "update_b": "BlockNumber",
+                            "pending_unlocks": "Vec<(BlockNumber, Balance)>"
                         },
                         "RewardData": {
                             "total": "Balance",
@@ -2765,11 +2752,12 @@ network:
                             "claimed": "Balance",
                             "gain_avg": "FixedU128"
                         },
-                        "AssetInstance": "AssetInstanceV1",
                         "MultiAsset": "MultiAssetV0",
                         "Xcm": "XcmV0",
                         "XcmOrder": "XcmOrderV0",
-                        "MultiLocation": "MultiLocationV0"
+                        "MultiLocation": "MultiLocationV0",
+                        "XcmError": "XcmErrorV0",
+                        "Response": "ResponseV0"
                     }
                 },
                 {
@@ -2850,7 +2838,9 @@ network:
                             "update_b": "BlockNumber",
                             "state": "PoolState",
                             "block_startup": "Option<BlockNumber>",
-                            "block_retired": "Option<BlockNumber>"
+                            "redeem_limit_time": "BlockNumber",
+                            "unlock_limit_nums": "u32",
+                            "pending_unlock_nums": "u32"
                         },
                         "Share": "u128",
                         "OracleValue": "Price",
@@ -3044,15 +3034,7 @@ network:
                                 "Fail": "Failed"
                             }
                         },
-                        "Currency": "CurrencyIdOf",
-                        "Amount": "AmountOf",
                         "PalletBalanceOf": "Balance",
-                        "NumberOrHex": {
-                            "_enum": {
-                                "Number": "u64",
-                                "Hex": "U256"
-                            }
-                        },
                         "ExtraFeeName": {
                             "_enum": [
                                 "SalpContribute",
@@ -3086,8 +3068,9 @@ network:
                             "_enum": [
                                 "Idle",
                                 "Refunded",
+                                "Redeemed",
                                 "Unlocked",
-                                "Refunding",
+                                "MigratedIdle",
                                 "Contributing"
                             ]
                         },
@@ -3169,24 +3152,23 @@ network:
                         },
                         "OracleKey": "CurrencyId",
                         "BlockNumberFor": "BlockNumber",
-                        "OrderId": "u64",
                         "OrderInfo": {
                             "owner": "AccountIdOf",
                             "vsbond": "CurrencyId",
-                            "supply": "u128",
-                            "remain": "u128",
-                            "unit_price": "U64F64",
+                            "amount": "BalanceOf",
+                            "remain": "BalanceOf",
+                            "total_price": "BalanceOf",
                             "order_id": "OrderId",
-                            "order_state": "OrderState"
+                            "order_type": "OrderType",
+                            "remain_price": "BalanceOf"
                         },
-                        "OrderState": {
-                            "_enum": [
-                                "InTrade",
-                                "Revoked",
-                                "Clinchd"
-                            ]
+                        "OrderId": "u64",
+                        "OrderType": {
+                            "_enum": {
+                                "Sell": 0,
+                                "Buy": 1
+                            }
                         },
-                        "U64F64": "u128",
                         "ZenlinkAssetId": {
                             "chain_id": "u32",
                             "asset_type": "u8",
@@ -3230,7 +3212,9 @@ network:
                                 "KSM": 4,
                                 "ETH": 5,
                                 "KAR": 6,
-                                "ZLK": 7
+                                "ZLK": 7,
+                                "PHA": 8,
+                                "RMRK": 9
                             }
                         },
                         "CurrencyId": {
@@ -3249,6 +3233,11 @@ network:
                         "AmountOf": "Balance",
                         "StorageVersion": "Releases",
                         "ShareWeight": "Balance",
+                        "Currency": "CurrencyIdOf",
+                        "Amount": "AmountOf",
+                        "NodePrimitivesCurrencyCurrencyId": "CurrencyId",
+                        "OrmlTokensBalanceLock": "BalanceLock",
+                        "OrmlTokensAccountData": "OrmlAccountData",
                         "TransferOriginType": {
                             "_enum": {
                                 "FromSelf": 0,
@@ -3275,7 +3264,8 @@ network:
                         "DepositData": {
                             "deposit": "Balance",
                             "gain_avgs": "BTreeMap<CurrencyId, FixedU128>",
-                            "update_b": "BlockNumber"
+                            "update_b": "BlockNumber",
+                            "pending_unlocks": "Vec<(BlockNumber, Balance)>"
                         },
                         "RewardData": {
                             "total": "Balance",
@@ -3283,11 +3273,12 @@ network:
                             "claimed": "Balance",
                             "gain_avg": "FixedU128"
                         },
-                        "AssetInstance": "AssetInstanceV1",
                         "MultiAsset": "MultiAssetV1",
                         "Xcm": "XcmV1",
                         "XcmOrder": "XcmOrderV1",
-                        "MultiLocation": "MultiLocationV1"
+                        "MultiLocation": "MultiLocationV1",
+                        "XcmError": "XcmErrorV1",
+                        "Response": "ResponseV1"
                     }
                 }
             ],
