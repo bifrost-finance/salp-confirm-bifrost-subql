@@ -8,7 +8,7 @@ import { SalpContributed } from "../types/models/SalpContributed";
 export async function salp(block: SubstrateBlock): Promise<void> {
   const blockNumber = block.block.header.number.toNumber();
 
-  const salpEvents = block.events.filter(e => e.event.section === 'salp') as SubstrateEvent[];
+  const salpEvents = block.events.filter(e => e.event.section === 'salp') as unknown as SubstrateEvent[];
   // const salpEvents = block.events as SubstrateEvent[];
   for (let salpEvent of salpEvents) {
     const { event: { data, section, method } } = salpEvent;
