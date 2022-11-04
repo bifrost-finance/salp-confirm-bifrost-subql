@@ -1,4 +1,4 @@
-import { SubstrateBlock, SubstrateEvent } from "@subql/types";
+import { SubstrateBlock, SubstrateEvent,SubstrateExtrinsic } from "@subql/types";
 import { BlockNumber, Balance, ParaId, MessageId } from "@polkadot/types/interfaces";
 import { Compact } from '@polkadot/types';
 import { SalpInfo } from "../types/models/SalpInfo";
@@ -8,7 +8,7 @@ import { SalpContributed } from "../types/models/SalpContributed";
 export async function salp(block: SubstrateBlock): Promise<void> {
   const blockNumber = block.block.header.number.toNumber();
 
-  const salpEvents = block.events.filter(e => e.event.section === 'salp') as SubstrateEvent[];
+  const salpEvents = block.events.filter(e => e.event.section === 'salp') as unknown as SubstrateEvent[];
   // const salpEvents = block.events as SubstrateEvent[];
   for (let salpEvent of salpEvents) {
     const { event: { data, section, method } } = salpEvent;
@@ -29,7 +29,7 @@ export async function handleSalpContributing(event: SubstrateEvent): Promise<voi
   const record = new SalpContributing(blockNumber.toString() + '-' + event.idx.toString());
   record.block_height = blockNumber;
   record.event_id = event.idx;
-  record.extrinsic_id = event.extrinsic.idx;
+  record.extrinsic_id = event.idx;
   record.block_timestamp = event.block.timestamp;
   record.account = account.toString();
   record.para_id = (para_id as ParaId).toNumber();
@@ -45,7 +45,7 @@ export async function handleSalpContributed(event: SubstrateEvent): Promise<void
   const record = new SalpContributed(blockNumber.toString() + '-' + event.idx.toString());
   record.block_height = blockNumber;
   record.event_id = event.idx;
-  record.extrinsic_id = event.extrinsic.idx;
+  record.extrinsic_id = event.idx;
   record.block_timestamp = event.block.timestamp;
   record.account = account.toString();
   record.para_id = (para_id as ParaId).toNumber();
@@ -62,7 +62,7 @@ export async function handleSalpContributeFailed(event: SubstrateEvent): Promise
   const record = new SalpContributed(blockNumber.toString() + '-' + event.idx.toString());
   record.block_height = blockNumber;
   record.event_id = event.idx;
-  record.extrinsic_id = event.extrinsic.idx;
+  record.extrinsic_id = event.idx;
   record.block_timestamp = event.block.timestamp;
   record.account = account.toString();
   record.para_id = (para_id as ParaId).toNumber();
