@@ -1,0 +1,35 @@
+specVersion: 0.2.0
+name: salp-confirm-bifrost-subql
+version: 1.0.0
+description: ''
+repository: https://github.com/bifrost-finance/salp-confirm-bifrost-subql.git
+schema:
+  file: ./schema.graphql
+network:
+  genesisHash: '0x2f04d4c24acf4c7a07662fe26bc4981f73741d29867e03b5a6a08d404cb417d9'
+  endpoint: ws://host.docker.internal:9910
+  chaintypes:
+    file: ./dist/chaintypes.js
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 1
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: salp
+          kind: substrate/BlockHandler
+        - handler: handleSalpContributing
+          kind: substrate/EventHandler
+          filter:
+            module: salp
+            method: Contributing
+        - handler: handleSalpContributed
+          kind: substrate/EventHandler
+          filter:
+            module: salp
+            method: Contributed
+        - handler: handleSalpContributeFailed
+          kind: substrate/EventHandler
+          filter:
+            module: salp
+            method: ContributeFailed
